@@ -1,0 +1,23 @@
+<?xml version="1.0" encoding="utf-8"?>
+<menu xmlns:android="http://schemas.android.com/apk/res/android">
+
+
+    <group android:checkableBehavior="single">
+
+
+        <item
+            android:id="@+id/homeFragment"
+            android:icon="@drawable/ic_music_player"
+            android:title="Music" />
+
+        <item
+            android:id="@+id/videoListFragment"
+            android:icon="@drawable/ic_video_light"
+            android:title="Video" />
+    </group>
+
+
+    <item android:id="@+id/settingFragment"
+        android:icon="@drawable/ic_settings"
+        android:title="Setting"/>
+</menu>
