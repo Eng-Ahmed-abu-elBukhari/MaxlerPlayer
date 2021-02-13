@@ -1,23 +1,48 @@
 package com.maxler.roaa.data.repository.songs
 
+import android.annotation.SuppressLint
+import android.app.Application
 import android.database.Cursor
 import android.os.Build
 import android.provider.MediaStore
-import androidx.core.database.getStringOrNull
-import com.maxler.roaa.data.model.Song
-import com.maxler.roaa.data.utils.Constants.IS_MUSIC
-
-import com.maxler.roaa.data.utils.PreferenceUtil
 import android.provider.MediaStore.Audio.AudioColumns
 import android.provider.MediaStore.Audio.Media
+import androidx.core.database.getStringOrNull
 import androidx.lifecycle.LiveData
+import com.maxler.roaa.data.model.Song
+import com.maxler.roaa.data.utils.Constants.IS_MUSIC
+import com.maxler.roaa.data.utils.Constants.projection
+import com.maxler.roaa.data.utils.PreferenceUtil
 
-class SongRepository :ISongRepository{
-
-    private var songs = mutableListOf<Song>()
+class SongRepository( private val application: Application) :ISongRepository{
 
 
 
+    // SONGS IMPLEMENTATION
+
+    override fun songs(): LiveData<List<Song>> {
+        return songs(makeSongsCursor(null,null))
+    }
+
+    override fun songs(cursor: Cursor?): LiveData<List<Song>> {
+        TODO("Not yet implemented")
+    }
+
+    override fun songs(query: String): LiveData<List<Song>> {
+        TODO("Not yet implemented")
+    }
+
+    override fun songsByFilePath(filePath: String): LiveData<List<Song>> {
+        TODO("Not yet implemented")
+    }
+
+    override fun song(cursor: Cursor?): Song {
+        TODO("Not yet implemented")
+    }
+
+    override fun song(songId: Long): Song {
+        TODO("Not yet implemented")
+    }
 
 
 
@@ -56,14 +81,14 @@ class SongRepository :ISongRepository{
     }
 
 
+    @SuppressLint("Recycle")
     private fun makeSongsCursor(
         selection:String?,
-        selectionArgs:Array<String>?,
+         selectionArgs:Array<String>?,
         sortOrder: String? = PreferenceUtil.songSortOrder
-    ):Cursor{
+    ):Cursor?{
 
         var selectionFinal = selection
-        var selectionArgsFinal = selectionArgs
 
         selectionFinal = if (selection!!.isNotEmpty() && selection.trim { it <= ' ' } != ""){
               "$IS_MUSIC AND $selectionFinal"
@@ -72,46 +97,30 @@ class SongRepository :ISongRepository{
         }
 
         val uri = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q){
-            MediaStore.Audio.Media.getContentUri(
+            Media.getContentUri(
                 MediaStore.VOLUME_EXTERNAL
             )
         }else{
-            MediaStore.Audio.Media.EXTERNAL_CONTENT_URI
+            Media.EXTERNAL_CONTENT_URI
         }
 
 
-        
+        return try {
+            application.contentResolver.query(
+                uri,
+                projection,
+                selectionFinal,
+                selectionArgs,
+                sortOrder
+            )
+        } catch (ex: SecurityException) {
+            return null
+        }
 
 
     }
 
 
-
-    // SONGS IMPLEMENTATION
-
-    override fun songs(): LiveData<List<Song>> {
-
-    }
-
-    override fun songs(cursor: Cursor?): LiveData<List<Song>> {
-        TODO("Not yet implemented")
-    }
-
-    override fun songs(query: String): LiveData<List<Song>> {
-        TODO("Not yet implemented")
-    }
-
-    override fun songsByFilePath(filePath: String): LiveData<List<Song>> {
-        TODO("Not yet implemented")
-    }
-
-    override fun song(cursor: Cursor?): Song {
-        TODO("Not yet implemented")
-    }
-
-    override fun song(songId: Long): Song {
-        TODO("Not yet implemented")
-    }
 
 
 

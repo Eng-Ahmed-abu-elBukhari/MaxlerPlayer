@@ -4,6 +4,7 @@ import androidx.core.content.edit
 import androidx.preference.PreferenceManager
 import com.maxler.roaa.data.helper.App
 import com.maxler.roaa.data.helper.SortOrder
+import com.maxler.roaa.data.utils.Constants.SONG_SORT_ORDER
 
 
 object PreferenceUtil {
@@ -16,12 +17,13 @@ object PreferenceUtil {
 
     var songSortOrder
         get() = sharedPreferences.getString(
-            Constants.SONG_SORT_ORDER,
+            SONG_SORT_ORDER,
             SortOrder.SongSortOrder.SORT_ORDER_A_Z
         )
         set(value) = sharedPreferences.edit {
-            putString( Constants.SONG_SORT_ORDER, value)
+            putString(SONG_SORT_ORDER, value)
         }
 
 
+    
 }
