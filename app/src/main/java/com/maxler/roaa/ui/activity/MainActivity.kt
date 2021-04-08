@@ -5,7 +5,6 @@ import android.content.Intent
 import android.content.pm.PackageManager
 import android.net.Uri
 import android.os.Bundle
-import android.provider.MediaStore
 import android.provider.Settings
 import android.view.MenuItem
 import android.view.View
@@ -21,8 +20,8 @@ import androidx.navigation.NavController
 import androidx.navigation.NavDestination
 import androidx.navigation.fragment.NavHostFragment
 import androidx.navigation.ui.*
-import com.google.android.material.bottomnavigation.BottomNavigationView
 import com.google.android.material.dialog.MaterialAlertDialogBuilder
+import com.google.android.material.floatingactionbutton.FloatingActionButton
 import com.google.android.material.navigation.NavigationView
 import com.maxler.roaa.R
 import com.maxler.roaa.databinding.ActivityMainBinding
@@ -36,51 +35,43 @@ class MainActivity : AppCompatActivity() ,NavigationView.OnNavigationItemSelecte
     /**You’ll use navController to navigate from one fragment to another.
      * Import findNavController from androidx.navigation.findNavController. */
     private val navController by lazy {
-        val navHostFragment = supportFragmentManager.findFragmentById(R.id.nav_host_fragment_container) as NavHostFragment
-        navHostFragment.navController
+        (supportFragmentManager.findFragmentById(R.id.nav_host_fragment_container) as NavHostFragment).navController
     }
 
     //2
     /** appBarConfiguration defines which fragments are the top level fragments so the drawerLayout
      * and hamburger icon can work properly.*/
     private val appBarConfiguration by lazy {
-
         AppBarConfiguration(
-            setOf(
-                R.id.homeFragment,
-                R.id.videoListFragment
-            ), drawerLayout = binding.drawerLayout
+            navController.graph,
+            drawerLayout = binding.drawerLayout
         )
     }
 
-    private lateinit var binding :ActivityMainBinding
 
-
+    private val binding by lazy {
+        DataBindingUtil.setContentView<ActivityMainBinding>(this,R.layout.activity_main)
+    }
 
     private val toolbar by lazy {
         findViewById<Toolbar>(R.id.toolbar)
     }
 
-    private val bottomNavigationView by lazy {
-        findViewById<BottomNavigationView>(R.id.bottom_navigation)
+    private val fab by lazy {
+        findViewById<FloatingActionButton>(R.id.fab)
     }
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        setContentView(R.layout.activity_main)
-        setupDataBinding()
-        setSupportActionBar(findViewById(R.id.toolbar))
+        setContentView(binding.root)
+
+        setSupportActionBar(toolbar)
         setupNavigation()
-        setupViews()
         requestPermission()
 
 }
 
 
-
-    private fun setupDataBinding(){
-        binding = DataBindingUtil.setContentView(this, R.layout.activity_main)
-    }
 
 
     private fun setupNavigation(){
@@ -89,25 +80,26 @@ class MainActivity : AppCompatActivity() ,NavigationView.OnNavigationItemSelecte
         NavigationUI.setupWithNavController(toolbar, navController, appBarConfiguration)
 
 
-
         navController.addOnDestinationChangedListener { controller: NavController, destination: NavDestination, arguments: Bundle? ->
-
-            if (destination.id == R.id.homeFragment
-            ){
-                toolbar.visibility  = View.VISIBLE
-            }else{
-                toolbar.visibility  = View.GONE
+            when(destination.id){
+                navController.graph.startDestination->{
+                    fab.show()
+                    binding.drawerLayout.setDrawerLockMode(DrawerLayout.LOCK_MODE_UNLOCKED)
+                    toolbar.visibility = View.VISIBLE
+                }
+                else->{
+                    binding.drawerLayout.setDrawerLockMode(DrawerLayout.LOCK_MODE_LOCKED_CLOSED)
+                }
             }
-
-            handlingDrawableOpen(destination = destination, navController = navController)
-            handlingBottomNavView(destination = destination)
         }
 
 
-        bottomNavigationView.setOnNavigationItemSelectedListener {
-            NavigationUI.onNavDestinationSelected(it,navController)
-        }
+        binding.navView.setNavigationItemSelectedListener(this)
 
+
+        fab.setOnClickListener {
+            navController.navigate(R.id.playlistsFragment)
+        }
     }
 
 
@@ -127,18 +119,14 @@ class MainActivity : AppCompatActivity() ,NavigationView.OnNavigationItemSelecte
     }
 
 
-
-
-     private fun handlingDrawableOpen(destination: NavDestination?, navController: NavController?) {
-        if (destination!!.id  in arrayOf(
-                navController!!.graph.startDestination,
-                R.id.videoListFragment)
-        ){
-            binding.drawerLayout.setDrawerLockMode(DrawerLayout.LOCK_MODE_UNLOCKED)
-        } else {
-            binding.drawerLayout.setDrawerLockMode(DrawerLayout.LOCK_MODE_LOCKED_CLOSED)
-        }
+    override fun onSupportNavigateUp(): Boolean {
+        return navController.navigateUp(appBarConfiguration) ||  super.onSupportNavigateUp()
     }
+
+
+
+
+
 
 
     override fun onRequestPermissionsResult(
@@ -176,24 +164,6 @@ class MainActivity : AppCompatActivity() ,NavigationView.OnNavigationItemSelecte
     }
 
 
-    private fun handlingBottomNavView(destination: NavDestination){
-        if (destination.id == R.id.videoListFragment){
-            bottomNavigationView.visibility =View.GONE
-        }else{
-            bottomNavigationView.visibility =View.VISIBLE
-        }
-
-    }
-
-    private fun setupViews() {
-        binding.navView.setNavigationItemSelectedListener(this)
-    }
-
-    override fun onSupportNavigateUp(): Boolean {
-        return navController.navigateUp(appBarConfiguration) ||  super.onSupportNavigateUp()
-    }
-
-
 
 
 
@@ -203,12 +173,12 @@ class MainActivity : AppCompatActivity() ,NavigationView.OnNavigationItemSelecte
         ContextCompat.checkSelfPermission(this,Manifest.permission.READ_EXTERNAL_STORAGE) == PackageManager.PERMISSION_GRANTED
 
 
-
     private fun requestPermission(){
         if (!haveStoragePermission()){
             val permissions = arrayOf(
                 Manifest.permission.READ_EXTERNAL_STORAGE,
-                Manifest.permission.WRITE_EXTERNAL_STORAGE)
+                Manifest.permission.WRITE_EXTERNAL_STORAGE
+            )
 
             ActivityCompat.requestPermissions(
                 this,
@@ -227,7 +197,6 @@ class MainActivity : AppCompatActivity() ,NavigationView.OnNavigationItemSelecte
             startActivity(it)
         }
     }
-
 
 
 

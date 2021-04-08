@@ -7,4 +7,16 @@
     <color name="teal_700">#FF018786</color>
     <color name="black">#FF000000</color>
     <color name="white">#FFFFFFFF</color>
+
+
+    <color name="player_background">#e5e5e5</color>
+    <color name="color_hint">#e5e5e5</color>
+
+
+
+    <color name="colorPrimary">#240046</color>
+    <color name="colorPrimaryVariant">#10002b</color>
+    <color name="text_colorSecondary">#3c096c</color>
+
+    <color name="seekBar_color">#5a189a</color>
 </resources>

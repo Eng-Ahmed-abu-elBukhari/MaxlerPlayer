@@ -1,49 +1,70 @@
 package com.maxler.roaa.data.repository.songs
 
 import android.annotation.SuppressLint
-import android.app.Application
+import android.content.Context
 import android.database.Cursor
 import android.os.Build
 import android.provider.MediaStore
 import android.provider.MediaStore.Audio.AudioColumns
 import android.provider.MediaStore.Audio.Media
 import androidx.core.database.getStringOrNull
-import androidx.lifecycle.LiveData
 import com.maxler.roaa.data.model.Song
-import com.maxler.roaa.data.utils.Constants.IS_MUSIC
+import com.maxler.roaa.data.utils.Constants
 import com.maxler.roaa.data.utils.Constants.projection
 import com.maxler.roaa.data.utils.PreferenceUtil
 
-class SongRepository( private val application: Application) :ISongRepository{
+class SongRepository( private val context: Context) :ISongRepository{
 
 
-
-    // SONGS IMPLEMENTATION
-
-    override fun songs(): LiveData<List<Song>> {
+    /** return all songs of device without any query
+     * */
+    override suspend fun songs(): List<Song> {
         return songs(makeSongsCursor(null,null))
     }
 
-    override fun songs(cursor: Cursor?): LiveData<List<Song>> {
-        TODO("Not yet implemented")
+    /** return list of songs
+     * */
+    override suspend fun songs(cursor: Cursor?): List<Song> {
+        val songs = mutableListOf<Song>()
+        if (cursor != null && cursor.moveToFirst()){
+            do {
+                songs.add(getSongFromCursorImpl(cursor))
+            }while (cursor.moveToNext())
+        }
+        cursor?.close()
+        return songs
     }
 
-    override fun songs(query: String): LiveData<List<Song>> {
-        TODO("Not yet implemented")
+    /** return single song
+     * */
+    override suspend fun song(cursor: Cursor?): Song {
+        val song = if (cursor != null && cursor.moveToFirst()){
+            getSongFromCursorImpl(cursor)
+        }else{
+            Constants.emptySong
+        }
+        cursor?.close()
+        return song
     }
 
-    override fun songsByFilePath(filePath: String): LiveData<List<Song>> {
-        TODO("Not yet implemented")
+
+
+    override suspend fun songs(query: String): List<Song> {
+        val selection = "${MediaStore.Images.ImageColumns.TITLE} LIKE ?"
+        return songs(
+            makeSongsCursor(selection = selection, arrayOf("%$query%"))
+        )
     }
 
-    override fun song(cursor: Cursor?): Song {
-        TODO("Not yet implemented")
-    }
+   // override fun songsByFilePath(filePath: String): List<Song> {}
 
-    override fun song(songId: Long): Song {
-        TODO("Not yet implemented")
-    }
 
+    override suspend fun song(songId: Long): Song {
+        val selection = "${MediaStore.Images.ImageColumns._ID} =?"
+        return song(
+            makeSongsCursor(selection = selection, arrayOf("%$songId%"))
+        )
+    }
 
 
 
@@ -52,7 +73,6 @@ class SongRepository( private val application: Application) :ISongRepository{
             val id = cursor.getLong(cursor.getColumnIndex(AudioColumns._ID))
             val title = cursor.getString(cursor.getColumnIndex(AudioColumns.TITLE))
             val trackNumber = cursor.getInt(cursor.getColumnIndex(AudioColumns.TRACK))
-            val year = cursor.getInt(cursor.getColumnIndex(AudioColumns.YEAR))
             val duration = cursor.getLong(cursor.getColumnIndex(AudioColumns.DURATION))
             val data = cursor.getString(cursor.getColumnIndex(AudioColumns.DATE_TAKEN))
             val dateModified = cursor.getLong(cursor.getColumnIndex(AudioColumns.DATE_MODIFIED))
@@ -67,7 +87,6 @@ class SongRepository( private val application: Application) :ISongRepository{
             id,
             title,
             trackNumber,
-            year,
             duration,
             data,
             dateModified,
@@ -83,18 +102,21 @@ class SongRepository( private val application: Application) :ISongRepository{
 
     @SuppressLint("Recycle")
     private fun makeSongsCursor(
-        selection:String?,
+         selection:String?,
          selectionArgs:Array<String>?,
-        sortOrder: String? = PreferenceUtil.songSortOrder
+        sortOrder: String? = PreferenceUtil(context = context).songSortOrder
     ):Cursor?{
 
-        var selectionFinal = selection
+         val selectionFinal = Constants.IS_MUSIC
 
-        selectionFinal = if (selection!!.isNotEmpty() && selection.trim { it <= ' ' } != ""){
-              "$IS_MUSIC AND $selectionFinal"
-        }else{
-            IS_MUSIC
-        }
+        // var selectionFinal: String? = selection
+
+     //    selectionFinal = if (selection!!.isNotEmpty() && selection.trim() != ""){
+       //       "${Constants.IS_MUSIC} AND $selectionFinal"
+       // }else{
+        //    Constants.IS_MUSIC
+        //}
+
 
         val uri = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q){
             Media.getContentUri(
@@ -106,7 +128,7 @@ class SongRepository( private val application: Application) :ISongRepository{
 
 
         return try {
-            application.contentResolver.query(
+            context.contentResolver.query(
                 uri,
                 projection,
                 selectionFinal,
@@ -117,11 +139,7 @@ class SongRepository( private val application: Application) :ISongRepository{
             return null
         }
 
-
     }
-
-
-
 
 
 
